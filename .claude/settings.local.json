@@ -10,7 +10,11 @@
       "Bash(kill:*)",
       "Bash(pkill:*)",
       "Bash(PORT=3001 npm start)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(ls:*)",
+      "Bash(sudo systemctl status:*)",
+      "Bash(sudo pkill:*)",
+      "Bash(pm2 status:*)"
     ],
     "deny": []
   }

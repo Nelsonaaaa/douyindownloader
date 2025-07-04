@@ -58,7 +58,7 @@ docker-compose logs --tail=20
 
 echo ""
 echo "✅ 部署完成！"
-echo "🌐 访问地址: http://你的服务器IP:3000"
+echo "🌐 访问地址: http://你的服务器IP:3001"
 echo ""
 echo "📋 常用管理命令:"
 echo "  查看状态: docker-compose ps"

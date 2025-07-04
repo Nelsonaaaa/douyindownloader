@@ -26,7 +26,7 @@ if [ ! -f .env ]; then
     cat > .env << EOF
 RAPIDAPI_KEY=${RAPIDAPI_KEY:-your_rapidapi_key_here}
 RAPIDAPI_HOST=${RAPIDAPI_HOST:-douyin-media-downloader.p.rapidapi.com}
-PORT=3000
+PORT=3001
 NODE_ENV=production
 EOF
     echo "请编辑 .env 文件填入你的API密钥"
@@ -47,7 +47,7 @@ server {
     server_name your-domain.com;  # 替换为你的域名
 
     location / {
-        proxy_pass http://localhost:3000;
+        proxy_pass http://localhost:3001;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
         proxy_set_header Connection 'upgrade';
@@ -65,7 +65,7 @@ EOF
 fi
 
 echo "✅ 部署完成！"
-echo "🌐 访问地址: http://your-server-ip:3000"
+echo "🌐 访问地址: http://your-server-ip:3001"
 echo "📋 管理命令:"
 echo "  查看状态: pm2 status"
 echo "  查看日志: pm2 logs douyin-downloader"

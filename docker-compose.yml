@@ -4,7 +4,7 @@ services:
     build: .
     container_name: douyin-downloader
     ports:
-      - "3000:3000"
+      - "3001:3001"
     environment:
       - NODE_ENV=production
       - RAPIDAPI_KEY=${RAPIDAPI_KEY}
@@ -12,7 +12,7 @@ services:
       - TZ=Asia/Shanghai
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:3000"]
+      test: ["CMD", "curl", "-f", "http://localhost:3001"]
       interval: 30s
       timeout: 10s
       retries: 3
