@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>觅安小红书助手</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- 导航栏 -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-text">觅安童书馆</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link">
+                    <span class="nav-icon">🎵</span>
+                    <span>抖音助手</span>
+                </a>
+                <a href="xiaohongshu.html" class="nav-link active">
+                    <span class="nav-icon">🌸</span>
+                    <span>小红书助手</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <header class="page-header xiaohongshu-theme">
+            <h1>觅安小红书助手</h1>
+            <p>Mi'an xiaohongshu helper</p>
+        </header>
+
+        <main>
+            <div class="input-section">
+                <input type="text" id="contentUrl" placeholder="粘贴小红书分享链接..." />
+                <button id="parseBtn" class="parse-btn xiaohongshu-btn">解析内容</button>
+            </div>
+
+            <div id="loading" class="loading hidden">
+                <div class="spinner xiaohongshu-spinner"></div>
+                <p>正在解析中...</p>
+            </div>
+
+            <div id="error" class="error hidden">
+                <p id="errorMsg"></p>
+            </div>
+
+            <div id="result" class="result hidden">
+                <div class="content-info">
+                    <!-- 内容预览区域 -->
+                    <div class="content-preview" id="contentPreview">
+                        <div class="preview-images" id="previewImages">
+                            <!-- 图片预览将在这里动态添加 -->
+                        </div>
+                        <div class="preview-video hidden" id="previewVideo">
+                            <img id="videoCover" src="" alt="视频封面" />
+                        </div>
+                    </div>
+                    
+                    <div class="info-text">
+                        <h3 id="contentTitle"></h3>
+                        <p class="content-desc" id="contentDesc"></p>
+                        <div class="author-info">
+                            <span class="author-label">作者:</span>
+                            <span id="contentAuthor">觅安-if</span>
+                        </div>
+                        <div class="content-stats">
+                            <span class="stats-item">
+                                <span class="stats-icon">👍</span>
+                                <span id="likeCount">-</span>
+                            </span>
+                            <span class="stats-item">
+                                <span class="stats-icon">💬</span>
+                                <span id="commentCount">-</span>
+                            </span>
+                            <span class="stats-item">
+                                <span class="stats-icon">⭐</span>
+                                <span id="collectCount">-</span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="download-section">
+                    <button id="downloadImagesBtn" class="download-btn xiaohongshu-download">📸 下载图片</button>
+                    <button id="downloadVideoBtn" class="video-btn xiaohongshu-video hidden">📹 下载视频</button>
+                    <button id="saveNoteBtn" class="note-btn xiaohongshu-note">📝 保存笔记</button>
+                    <button id="downloadAudioBtn" class="audio-btn xiaohongshu-audio hidden">🎵 提取音频</button>
+                </div>
+            </div>
+
+            <!-- 图片预览弹窗 -->
+            <div id="imageModal" class="image-modal hidden">
+                <div class="modal-content">
+                    <div class="image-gallery">
+                        <div class="gallery-main">
+                            <img id="currentImage" src="" alt="预览图片" />
+                        </div>
+                        <div class="gallery-thumbs" id="galleryThumbs">
+                            <!-- 缩略图将在这里动态添加 -->
+                        </div>
+                    </div>
+                    <button id="closeImageModal" class="close-modal">✕ 关闭</button>
+                </div>
+            </div>
+
+            <!-- 视频预览弹窗 -->
+            <div id="videoModal" class="video-modal hidden">
+                <div class="modal-content">
+                    <video id="previewVideoPlayer" controls>
+                        <source id="videoSource" src="" type="video/mp4">
+                        您的浏览器不支持视频播放。
+                    </video>
+                    <button id="closeVideoModal" class="close-modal">✕ 关闭</button>
+                </div>
+            </div>
+
+        </main>
+
+        <footer>
+            <p>仅供个人学习使用，请遵守相关法律法规</p>
+        </footer>
+    </div>
+
+    <script src="xiaohongshu.js"></script>
+</body>
+</html>

@@ -3,24 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>抖音视频下载器</title>
+    <title>觅安抖音助手</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
+    <!-- 导航栏 -->
+    <nav class="main-nav">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <span class="logo-text">觅安童书馆</span>
+            </div>
+            <div class="nav-links">
+                <a href="index.html" class="nav-link active">
+                    <span class="nav-icon">🎵</span>
+                    <span>抖音助手</span>
+                </a>
+                <a href="xiaohongshu.html" class="nav-link">
+                    <span class="nav-icon">🌸</span>
+                    <span>小红书助手</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
     <div class="container">
-        <header>
-            <h1>抖音视频下载器</h1>
-            <p>支持无水印高清下载</p>
+        <header class="page-header douyin-theme">
+            <h1>觅安抖音助手</h1>
+            <p>Mi'an douyin downloader</p>
         </header>
 
         <main>
             <div class="input-section">
                 <input type="text" id="videoUrl" placeholder="粘贴抖音分享链接..." />
-                <button id="parseBtn">解析视频</button>
+                <button id="parseBtn" class="parse-btn douyin-btn">解析视频</button>
             </div>
 
             <div id="loading" class="loading hidden">
-                <div class="spinner"></div>
+                <div class="spinner douyin-spinner"></div>
                 <p>正在解析中...</p>
             </div>
 
@@ -32,10 +51,6 @@
                 <div class="video-info">
                     <div class="video-preview" id="videoPreview">
                         <img id="videoCover" src="" alt="视频封面" />
-                        <div class="preview-overlay" id="previewOverlay">
-                            <div class="play-btn">▶</div>
-                            <span>点击预览</span>
-                        </div>
                     </div>
                     <div class="info-text">
                         <h3 id="videoTitle"></h3>
@@ -45,8 +60,8 @@
                 </div>
                 
                 <div class="download-section">
-                    <button id="downloadVideoBtn" class="download-btn">📹 下载视频</button>
-                    <button id="downloadAudioBtn" class="audio-btn">🎵 下载MP3音频</button>
+                    <button id="downloadVideoBtn" class="download-btn douyin-download">📹 下载视频</button>
+                    <button id="downloadAudioBtn" class="audio-btn douyin-audio">🎵 下载MP3音频</button>
                 </div>
             </div>
 

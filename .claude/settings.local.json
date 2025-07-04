@@ -14,7 +14,9 @@
       "Bash(ls:*)",
       "Bash(sudo systemctl status:*)",
       "Bash(sudo pkill:*)",
-      "Bash(pm2 status:*)"
+      "Bash(pm2 status:*)",
+      "Bash(PORT=3002 npm start)",
+      "Bash(rm:*)"
     ],
     "deny": []
   }
