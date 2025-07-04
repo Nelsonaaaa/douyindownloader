@@ -230,6 +230,133 @@ footer {
     font-size: 0.9rem;
 }
 
+/* 视频预览样式 */
+.video-preview {
+    position: relative;
+    cursor: pointer;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.video-preview img {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.preview-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    transition: opacity 0.3s ease;
+    opacity: 0;
+}
+
+.video-preview:hover .preview-overlay {
+    opacity: 1;
+}
+
+.play-btn {
+    font-size: 3rem;
+    color: white;
+    margin-bottom: 10px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.preview-overlay span {
+    color: white;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+/* 视频预览弹窗 */
+.video-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    position: relative;
+    width: 800px;
+    max-width: 90vw;
+    min-width: 400px;
+    background: #000;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+.modal-content video {
+    width: 100%;
+    height: 450px;
+    object-fit: contain;
+    background: #000;
+}
+
+.close-modal {
+    position: absolute;
+    top: -50px;
+    right: 0;
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.close-modal:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+/* 下载进度条样式 */
+.progress-container {
+    margin: 20px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.progress-bar {
+    width: 100%;
+    height: 20px;
+    background: #e9ecef;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-bottom: 10px;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #28a745, #20c997);
+    width: 0%;
+    transition: width 0.3s ease;
+    border-radius: 10px;
+}
+
+.progress-text {
+    text-align: center;
+    color: #495057;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
 .hidden {
     display: none !important;
 }
@@ -258,5 +385,21 @@ footer {
     
     header h1 {
         font-size: 2rem;
+    }
+    
+    /* 移动端视频预览优化 */
+    .modal-content {
+        width: 95vw;
+        min-width: 300px;
+    }
+    
+    .modal-content video {
+        height: 300px;
+    }
+    
+    .close-modal {
+        top: -40px;
+        font-size: 0.9rem;
+        padding: 8px 12px;
     }
 }

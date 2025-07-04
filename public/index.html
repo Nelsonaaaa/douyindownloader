@@ -30,17 +30,34 @@
 
             <div id="result" class="result hidden">
                 <div class="video-info">
-                    <img id="videoCover" src="" alt="视频封面" />
+                    <div class="video-preview" id="videoPreview">
+                        <img id="videoCover" src="" alt="视频封面" />
+                        <div class="preview-overlay" id="previewOverlay">
+                            <div class="play-btn">▶</div>
+                            <span>点击预览</span>
+                        </div>
+                    </div>
                     <div class="info-text">
                         <h3 id="videoTitle"></h3>
-                        <p>作者: <span id="videoAuthor"></span></p>
-                        <p>时长: <span id="videoDuration"></span>秒</p>
+                        <p>作者: <span id="videoAuthor">觅安-if</span></p>
+                        <p>时长: <span id="videoDuration">保密</span></p>
                     </div>
                 </div>
                 
                 <div class="download-section">
-                    <button id="downloadVideoBtn" class="download-btn">📹 下载HD视频</button>
+                    <button id="downloadVideoBtn" class="download-btn">📹 下载视频</button>
                     <button id="downloadAudioBtn" class="audio-btn">🎵 下载MP3音频</button>
+                </div>
+            </div>
+
+            <!-- 视频预览弹窗 -->
+            <div id="videoModal" class="video-modal hidden">
+                <div class="modal-content">
+                    <video id="previewVideo" controls>
+                        <source id="videoSource" src="" type="video/mp4">
+                        您的浏览器不支持视频播放。
+                    </video>
+                    <button id="closeModal" class="close-modal">✕ 关闭</button>
                 </div>
             </div>
 

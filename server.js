@@ -9,7 +9,8 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ charset: 'utf-8' }));
+app.use(express.urlencoded({ extended: true, charset: 'utf-8' }));
 app.use(express.static('public'));
 
 // 随机User-Agent
@@ -302,9 +303,13 @@ async function getRapidApiData(originalUrl, videoId) {
       url: apiUrl,
       headers: {
         'X-RapidAPI-Key': process.env.RAPIDAPI_KEY,
-        'X-RapidAPI-Host': process.env.RAPIDAPI_HOST
+        'X-RapidAPI-Host': process.env.RAPIDAPI_HOST,
+        'Accept': 'application/json',
+        'Accept-Charset': 'utf-8'
       },
-      timeout: 15000
+      timeout: 15000,
+      responseType: 'json',
+      responseEncoding: 'utf8'
     });
     
     console.log('RapidAPI响应:', JSON.stringify(response.data, null, 2));
@@ -317,21 +322,29 @@ async function getRapidApiData(originalUrl, videoId) {
       let videoUrl = '';
       let downloadLinks = data.download_links || [];
       
-      // 查找HD视频链接
-      let hdLink = downloadLinks.find(link => 
-        link.label && (link.label.includes('HD') || link.label.includes('MP4 HD'))
+      // 优先选择普通质量视频链接（避免HD加载慢）
+      let normalLink = downloadLinks.find(link => 
+        link.label && link.label.includes('MP4') && 
+        !link.label.includes('HD') && !link.label.includes('MP3')
       );
       
-      if (hdLink) {
-        videoUrl = hdLink.url;
-        console.log('选择HD链接:', videoUrl);
+      if (normalLink) {
+        videoUrl = normalLink.url;
+        console.log('选择标准质量链接:', videoUrl);
       } else {
-        // 如果没有HD，选择第一个MP4链接
-        let mp4Link = downloadLinks.find(link => 
-          link.label && link.label.includes('MP4') && !link.label.includes('MP3')
+        // 如果没有标准质量，再考虑HD链接
+        let hdLink = downloadLinks.find(link => 
+          link.label && (link.label.includes('HD') || link.label.includes('MP4 HD'))
         );
-        videoUrl = mp4Link ? mp4Link.url : (downloadLinks[0] ? downloadLinks[0].url : '');
-        console.log('选择标准链接:', videoUrl);
+        
+        if (hdLink) {
+          videoUrl = hdLink.url;
+          console.log('选择HD链接:', videoUrl);
+        } else {
+          // 最后使用第一个可用链接
+          videoUrl = downloadLinks[0] ? downloadLinks[0].url : '';
+          console.log('选择第一个可用链接:', videoUrl);
+        }
       }
       
       if (!videoUrl) {
@@ -341,11 +354,34 @@ async function getRapidApiData(originalUrl, videoId) {
       // 修复中文编码问题
       let title = data.title || '无标题';
       try {
-        // 解码UTF-8编码问题
-        title = decodeURIComponent(escape(title));
+        // 尝试多种编码修复方法
+        if (title.includes('å') || title.includes('è') || title.includes('ï¼')) {
+          // 这是常见的UTF-8乱码，尝试修复
+          title = Buffer.from(title, 'latin1').toString('utf8');
+        }
+        
+        // 如果还是乱码，尝试另一种方法
+        if (title.includes('å') || title.includes('è')) {
+          title = decodeURIComponent(escape(title));
+        }
+        
+        // 清理特殊字符，保留中文、英文、数字、常用符号
+        title = title.replace(/[^\w\s\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff\u3040-\u309f\u30a0-\u30ff\-\#\@\!\?\.\,\(\)\[\]\{\}]/g, '');
+        
       } catch (e) {
-        console.log('标题解码失败，使用原始标题');
+        console.log('标题解码失败，使用默认标题');
+        title = '抖音视频';
       }
+      
+      // 限制标题长度
+      if (title.length > 50) {
+        title = title.substring(0, 50) + '...';
+      }
+
+      // 查找音频链接
+      let audioLink = downloadLinks.find(link => 
+        link.label && link.label.includes('MP3')
+      );
 
       return {
         videoId: data.tiktok_id || videoId,
@@ -355,6 +391,10 @@ async function getRapidApiData(originalUrl, videoId) {
         cover: data.thumbnail || '',
         duration: 0,
         downloadLinks: downloadLinks,
+        // 直接提供第一个普通质量链接
+        normalVideoUrl: normalLink ? normalLink.url : videoUrl,
+        // 直接提供音频链接
+        audioUrl: audioLink ? audioLink.url : null,
         success: true
       };
     }
@@ -565,36 +605,47 @@ app.post('/api/parse', async (req, res) => {
   }
 });
 
-// 下载HD视频
+// 下载视频（优先普通质量）
 app.post('/api/download-video', async (req, res) => {
   try {
-    const { downloadLinks, title } = req.body;
+    const { downloadUrl, downloadLinks, title } = req.body;
     
-    if (!downloadLinks || !Array.isArray(downloadLinks)) {
-      return res.status(400).json({ error: '缺少下载链接数据' });
-    }
+    // 支持新的单URL方式和旧的链接数组方式
+    let finalDownloadUrl = downloadUrl;
     
-    // 查找HD视频链接
-    let hdLink = downloadLinks.find(link => 
-      link.label && link.label.includes('HD')
-    );
-    
-    if (!hdLink) {
-      // 如果没有HD，选择第一个MP4链接
-      hdLink = downloadLinks.find(link => 
-        link.label && link.label.includes('MP4') && !link.label.includes('MP3')
+    if (!finalDownloadUrl && downloadLinks && Array.isArray(downloadLinks)) {
+      // 兼容旧版本：从链接数组中选择最优链接
+      let normalLink = downloadLinks.find(link => 
+        link.label && link.label.includes('MP4') && 
+        !link.label.includes('HD') && !link.label.includes('MP3')
       );
+      
+      if (normalLink) {
+        finalDownloadUrl = normalLink.url;
+      } else {
+        let hdLink = downloadLinks.find(link => 
+          link.label && link.label.includes('HD')
+        );
+        if (hdLink) {
+          finalDownloadUrl = hdLink.url;
+        } else {
+          let mp4Link = downloadLinks.find(link => 
+            link.label && link.label.includes('MP4') && !link.label.includes('MP3')
+          );
+          finalDownloadUrl = mp4Link ? mp4Link.url : '';
+        }
+      }
     }
     
-    if (!hdLink) {
+    if (!finalDownloadUrl) {
       return res.status(400).json({ error: '未找到视频下载链接' });
     }
     
-    console.log('开始下载HD视频:', hdLink.url);
+    console.log('开始下载视频:', finalDownloadUrl);
     
     const response = await axios({
       method: 'GET',
-      url: hdLink.url,
+      url: finalDownloadUrl,
       responseType: 'stream',
       timeout: 60000,
       headers: {
@@ -626,26 +677,28 @@ app.post('/api/download-video', async (req, res) => {
 // 下载MP3音频
 app.post('/api/download-audio', async (req, res) => {
   try {
-    const { downloadLinks, title } = req.body;
+    const { downloadLinks, audioUrl, title } = req.body;
     
-    if (!downloadLinks || !Array.isArray(downloadLinks)) {
-      return res.status(400).json({ error: '缺少下载链接数据' });
+    // 支持新的单URL方式和旧的链接数组方式
+    let finalAudioUrl = audioUrl;
+    
+    if (!finalAudioUrl && downloadLinks && Array.isArray(downloadLinks)) {
+      // 兼容旧版本：从链接数组中查找MP3链接
+      let mp3Link = downloadLinks.find(link => 
+        link.label && link.label.includes('MP3')
+      );
+      finalAudioUrl = mp3Link ? mp3Link.url : null;
     }
     
-    // 查找MP3链接
-    let mp3Link = downloadLinks.find(link => 
-      link.label && link.label.includes('MP3')
-    );
-    
-    if (!mp3Link) {
+    if (!finalAudioUrl) {
       return res.status(400).json({ error: '未找到音频下载链接' });
     }
     
-    console.log('开始下载MP3音频:', mp3Link.url);
+    console.log('开始下载MP3音频:', finalAudioUrl);
     
     const response = await axios({
       method: 'GET',
-      url: mp3Link.url,
+      url: finalAudioUrl,
       responseType: 'stream',
       timeout: 60000,
       headers: {
