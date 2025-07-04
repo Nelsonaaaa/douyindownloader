@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API配置管理</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .config-panel {
+            background: white;
+            border-radius: 10px;
+            padding: 30px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        input[type="text"], input[type="password"] {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+        input:focus {
+            outline: none;
+            border-color: #007bff;
+        }
+        .btn {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        .btn:hover {
+            background: #0056b3;
+        }
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            border-radius: 6px;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .api-info {
+            background: #e9f7ff;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .test-section {
+            border-top: 1px solid #eee;
+            padding-top: 20px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="config-panel">
+        <h1>API配置管理</h1>
+        
+        <div class="api-info">
+            <h3>🔑 获取RapidAPI密钥步骤：</h3>
+            <ol>
+                <li>访问 <a href="https://rapidapi.com/" target="_blank">RapidAPI官网</a></li>
+                <li>搜索 "Social Media Video Downloader" 或 "TikTok"</li>
+                <li>选择API并订阅(通常有免费额度)</li>
+                <li>复制 X-RapidAPI-Key 到下方</li>
+            </ol>
+        </div>
+
+        <form id="configForm">
+            <div class="form-group">
+                <label for="rapidApiKey">RapidAPI Key:</label>
+                <input type="password" id="rapidApiKey" placeholder="输入你的RapidAPI密钥">
+            </div>
+            
+            <div class="form-group">
+                <label for="rapidApiHost">RapidAPI Host:</label>
+                <input type="text" id="rapidApiHost" value="social-media-video-downloader.p.rapidapi.com" placeholder="API主机地址">
+            </div>
+            
+            <div class="form-group">
+                <label for="juheKey">聚合数据Key (可选):</label>
+                <input type="password" id="juheKey" placeholder="聚合数据AppKey">
+            </div>
+            
+            <div class="form-group">
+                <label for="apiSpaceToken">APISpace Token (可选):</label>
+                <input type="password" id="apiSpaceToken" placeholder="APISpace Token">
+            </div>
+            
+            <button type="submit" class="btn">保存配置</button>
+            <div id="status" class="status" style="display: none;"></div>
+        </form>
+        
+        <div class="test-section">
+            <h3>🧪 测试API</h3>
+            <div class="form-group">
+                <label for="testUrl">测试链接:</label>
+                <input type="text" id="testUrl" placeholder="粘贴抖音视频链接测试">
+            </div>
+            <button type="button" id="testBtn" class="btn">测试解析</button>
+            <div id="testResult" style="margin-top: 15px;"></div>
+        </div>
+    </div>
+
+    <script>
+        // 保存配置
+        document.getElementById('configForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const config = {
+                rapidApiKey: document.getElementById('rapidApiKey').value,
+                rapidApiHost: document.getElementById('rapidApiHost').value,
+                juheKey: document.getElementById('juheKey').value,
+                apiSpaceToken: document.getElementById('apiSpaceToken').value
+            };
+            
+            try {
+                const response = await fetch('/api/config', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(config)
+                });
+                
+                const result = await response.json();
+                showStatus(result.success ? 'success' : 'error', result.message);
+            } catch (error) {
+                showStatus('error', '保存失败: ' + error.message);
+            }
+        });
+        
+        // 测试API
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const testUrl = document.getElementById('testUrl').value;
+            if (!testUrl) {
+                alert('请输入测试链接');
+                return;
+            }
+            
+            document.getElementById('testBtn').textContent = '测试中...';
+            document.getElementById('testBtn').disabled = true;
+            
+            try {
+                const response = await fetch('/api/parse', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ url: testUrl })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    document.getElementById('testResult').innerHTML = `
+                        <div class="status success">
+                            <strong>✅ 解析成功!</strong><br>
+                            标题: ${result.data.title}<br>
+                            作者: ${result.data.author}<br>
+                            时长: ${result.data.duration}秒
+                        </div>
+                    `;
+                } else {
+                    document.getElementById('testResult').innerHTML = `
+                        <div class="status error">
+                            <strong>❌ 解析失败:</strong> ${result.error}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                document.getElementById('testResult').innerHTML = `
+                    <div class="status error">
+                        <strong>❌ 网络错误:</strong> ${error.message}
+                    </div>
+                `;
+            } finally {
+                document.getElementById('testBtn').textContent = '测试解析';
+                document.getElementById('testBtn').disabled = false;
+            }
+        });
+        
+        function showStatus(type, message) {
+            const status = document.getElementById('status');
+            status.className = 'status ' + type;
+            status.textContent = message;
+            status.style.display = 'block';
+            
+            setTimeout(() => {
+                status.style.display = 'none';
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
