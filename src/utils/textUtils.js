@@ -41,7 +41,39 @@ const generateSafeFilename = (title, extension = '') => {
   return `${cleanTitle}_${timestamp}${extension}`;
 };
 
+// 从分享文本中提取抖音链接
+const extractDouyinUrl = (shareText) => {
+  if (!shareText) return null;
+  
+  // 移动端格式: 9.48 复制打开抖音，看看【作品】内容... https://v.douyin.com/xxx/ 其他文本
+  // PC端格式: 4.30 N@w.sr 10/09 HVY:/ 内容 https://v.douyin.com/xxx/ 复制此链接...
+  const douyinMatch = shareText.match(/(https?:\/\/v\.douyin\.com\/[^\s\/]+)/);
+  
+  if (douyinMatch) {
+    return douyinMatch[1];
+  }
+  
+  // 兼容其他douyin.com链接
+  const generalMatch = shareText.match(/(https?:\/\/[^\s]*douyin\.com[^\s]*)/);
+  if (generalMatch) {
+    return generalMatch[1];
+  }
+  
+  return null;
+};
+
+// 清理分享文本中的链接
+const cleanShareText = (text) => {
+  if (!text) return '';
+  
+  // 提取抖音链接
+  const url = extractDouyinUrl(text);
+  return url || text.trim();
+};
+
 module.exports = {
   fixChineseEncoding,
-  generateSafeFilename
+  generateSafeFilename,
+  extractDouyinUrl,
+  cleanShareText
 };

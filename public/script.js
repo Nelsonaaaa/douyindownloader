@@ -63,10 +63,27 @@ class DouyinDownloader {
     cleanUrl() {
         let url = this.videoUrlInput.value.trim();
         if (url) {
-            // 提取链接中的有效部分
-            const match = url.match(/(https?:\/\/[^\s]+)/);
-            if (match) {
-                this.videoUrlInput.value = match[1];
+            // 支持移动端和PC端抖音链接的正则表达式
+            // 移动端格式: 9.48 复制打开抖音，看看【作品】内容... https://v.douyin.com/xxx/ 其他文本
+            // PC端格式: 4.30 N@w.sr 10/09 HVY:/ 内容 https://v.douyin.com/xxx/ 复制此链接...
+            const douyinMatch = url.match(/(https?:\/\/v\.douyin\.com\/[^\s\/]+)/);
+            
+            if (douyinMatch) {
+                this.videoUrlInput.value = douyinMatch[1];
+                return;
+            }
+            
+            // 兼容其他douyin.com链接
+            const generalMatch = url.match(/(https?:\/\/[^\s]*douyin\.com[^\s]*)/);
+            if (generalMatch) {
+                this.videoUrlInput.value = generalMatch[1];
+                return;
+            }
+            
+            // 如果没有找到抖音链接，保持原有逻辑
+            const fallbackMatch = url.match(/(https?:\/\/[^\s]+)/);
+            if (fallbackMatch) {
+                this.videoUrlInput.value = fallbackMatch[1];
             }
         }
     }
@@ -150,7 +167,16 @@ class DouyinDownloader {
     }
 
     isValidDouyinUrl(url) {
-        return url.includes('douyin.com') || url.includes('v.douyin.com');
+        // 支持多种抖音链接格式的验证
+        const douyinPatterns = [
+            /https?:\/\/v\.douyin\.com\/[^\s\/]+/,           // v.douyin.com短链接
+            /https?:\/\/www\.douyin\.com\/video\/\d+/,       // 完整抖音链接
+            /https?:\/\/www\.iesdouyin\.com\/share\/video/,  // 分享链接
+            /douyin\.com/,                                   // 通用douyin.com检查
+            /v\.douyin\.com/                                 // v.douyin.com检查
+        ];
+        
+        return douyinPatterns.some(pattern => pattern.test(url));
     }
 
     async downloadVideo() {
@@ -229,7 +255,10 @@ class DouyinDownloader {
 
         try {
             this.downloadAudioBtn.disabled = true;
-            this.downloadAudioBtn.textContent = '🎵 下载中...';
+            this.downloadAudioBtn.textContent = '🎵 准备下载...';
+            
+            // 显示音频下载进度条
+            this.showAudioDownloadProgress();
             
             const response = await fetch('/api/download-audio', {
                 method: 'POST',
@@ -244,15 +273,17 @@ class DouyinDownloader {
             });
 
             if (response.ok) {
-                const blob = await response.blob();
-                const url = window.URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = `${this.generateFilename(this.currentVideoData.title)}.mp3`;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                window.URL.revokeObjectURL(url);
+                // 获取文件大小用于进度计算
+                const contentLength = response.headers.get('content-length');
+                const total = parseInt(contentLength, 10);
+                
+                if (total) {
+                    await this.downloadAudioWithProgress(response, total, this.currentVideoData.title);
+                } else {
+                    // 如果无法获取文件大小，直接下载
+                    const blob = await response.blob();
+                    this.downloadBlob(blob, `${this.generateFilename(this.currentVideoData.title)}.mp3`);
+                }
             } else {
                 const error = await response.json();
                 this.showError(error.error || '音频下载失败');
@@ -262,6 +293,7 @@ class DouyinDownloader {
             console.error('音频下载错误:', error);
             this.showError('音频下载失败，请稍后重试');
         } finally {
+            this.hideAudioDownloadProgress();
             this.downloadAudioBtn.disabled = false;
             this.downloadAudioBtn.textContent = '🎵 下载MP3音频';
         }
@@ -299,6 +331,33 @@ class DouyinDownloader {
     // 隐藏下载进度条
     hideDownloadProgress() {
         const progressContainer = document.getElementById('downloadProgress');
+        if (progressContainer) {
+            progressContainer.classList.add('hidden');
+        }
+    }
+
+    // 显示音频下载进度条
+    showAudioDownloadProgress() {
+        // 创建音频进度条元素（如果不存在）
+        let progressContainer = document.getElementById('audioDownloadProgress');
+        if (!progressContainer) {
+            progressContainer = document.createElement('div');
+            progressContainer.id = 'audioDownloadProgress';
+            progressContainer.className = 'progress-container';
+            progressContainer.innerHTML = `
+                <div class="progress-bar">
+                    <div class="progress-fill" id="audioProgressFill"></div>
+                </div>
+                <div class="progress-text" id="audioProgressText">准备下载音频...</div>
+            `;
+            this.result.appendChild(progressContainer);
+        }
+        progressContainer.classList.remove('hidden');
+    }
+
+    // 隐藏音频下载进度条
+    hideAudioDownloadProgress() {
+        const progressContainer = document.getElementById('audioDownloadProgress');
         if (progressContainer) {
             progressContainer.classList.add('hidden');
         }

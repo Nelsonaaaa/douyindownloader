@@ -16,7 +16,16 @@
       "Bash(sudo pkill:*)",
       "Bash(pm2 status:*)",
       "Bash(PORT=3002 npm start)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(sudo npm install:*)",
+      "Bash(sudo chmod:*)",
+      "Bash(pm2 list:*)",
+      "Bash(pm2 logs:*)",
+      "Bash(sudo kill:*)",
+      "Bash(sudo lsof:*)",
+      "Bash(sudo netstat:*)",
+      "Bash(grep:*)",
+      "Bash(fuser:*)"
     ],
     "deny": []
   }

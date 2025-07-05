@@ -3,15 +3,22 @@ require('dotenv').config();
 const config = {
   // 服务器配置
   server: {
-    port: process.env.PORT || 3001,
+    port: process.env.PORT || 3002,
   },
 
   // API配置
   apis: {
+    // 抖音API配置
     rapidapi: {
       key: process.env.RAPIDAPI_KEY,
-      host: process.env.RAPIDAPI_HOST || 'douyin-media-downloader.p.rapidapi.com',
+      host: process.env.DOUYIN_RAPIDAPI_HOST || 'douyin-media-downloader.p.rapidapi.com',
       url: 'https://douyin-media-downloader.p.rapidapi.com/v2.php'
+    },
+    // 小红书API配置
+    xiaohongshu: {
+      key: process.env.RAPIDAPI_KEY,
+      host: process.env.XIAOHONGSHU_RAPIDAPI_HOST || 'tiktok-douyin-xiaohongshu-weibo-instagram-api.p.rapidapi.com',
+      url: 'https://tiktok-douyin-xiaohongshu-weibo-instagram-api.p.rapidapi.com/api/v1/xiaohongshu/web/get_note_info_v3'
     },
     juhe: {
       key: process.env.JUHE_API_KEY,
@@ -35,12 +42,11 @@ const config = {
     douyin: {
       domains: ['douyin.com', 'v.douyin.com'],
       name: '抖音'
+    },
+    xiaohongshu: {
+      domains: ['xiaohongshu.com', 'xhslink.com'],
+      name: '小红书'
     }
-    // 为后续小红书功能预留
-    // xiaohongshu: {
-    //   domains: ['xiaohongshu.com', 'xhslink.com'],
-    //   name: '小红书'
-    // }
   }
 };
 
@@ -69,6 +75,8 @@ const isApiConfigured = (apiName) => {
   switch (apiName) {
     case 'rapidapi':
       return config.apis.rapidapi.key && config.apis.rapidapi.key !== 'your_rapidapi_key_here';
+    case 'xiaohongshu':
+      return config.apis.xiaohongshu.key && config.apis.xiaohongshu.key !== 'your_rapidapi_key_here';
     case 'juhe':
       return !!config.apis.juhe.key;
     case 'apispace':

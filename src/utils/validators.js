@@ -1,6 +1,14 @@
-// 验证是否为抖音链接
+// 验证是否为抖音链接 - 支持移动端和PC端格式
 const isValidDouyinUrl = (url) => {
-  return url.includes('douyin.com') || url.includes('v.douyin.com');
+  const douyinPatterns = [
+    /https?:\/\/v\.douyin\.com\/[^\s\/]+/,           // v.douyin.com短链接
+    /https?:\/\/www\.douyin\.com\/video\/\d+/,       // 完整抖音链接
+    /https?:\/\/www\.iesdouyin\.com\/share\/video/,  // 分享链接
+    /douyin\.com/,                                   // 通用douyin.com检查
+    /v\.douyin\.com/                                 // v.douyin.com检查
+  ];
+  
+  return douyinPatterns.some(pattern => pattern.test(url));
 };
 
 // 验证是否为小红书链接（为后续功能预留）
