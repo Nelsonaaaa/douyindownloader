@@ -128,9 +128,217 @@ router.get('/queue-status', (req, res) => {
   }
 });
 
+// 新增：获取单个下载进度的HTTP轮询接口（备用方案）
+router.get('/download-status/:downloadId', (req, res) => {
+  try {
+    const { downloadId } = req.params;
+    
+    // 从性能监控器获取下载状态
+    const performanceReport = DownloadService.getPerformanceReport();
+    const downloadInfo = performanceReport.downloads ? 
+      performanceReport.downloads.find(d => d.downloadId === downloadId) : null;
+    
+    if (!downloadInfo) {
+      return res.status(404).json({
+        success: false,
+        error: '下载任务不存在或已完成'
+      });
+    }
+    
+    res.json({
+      success: true,
+      data: {
+        downloadId: downloadId,
+        status: downloadInfo.status || 'unknown',
+        progress: downloadInfo.progress || {},
+        startTime: downloadInfo.startTime,
+        duration: downloadInfo.duration
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// ===== 统一智能解析API =====
+
+// 统一智能解析入口 - 支持抖音和小红书
+router.post('/universal-parse', async (req, res) => {
+  try {
+    const { input, platform } = req.body;
+    
+    if (!input || typeof input !== 'string') {
+      return res.status(400).json({
+        success: false,
+        error: '请提供有效的输入内容'
+      });
+    }
+    
+    console.log('统一解析请求:', { input: input.substring(0, 100) + '...', platform });
+    
+    // 1. 智能平台检测
+    const detectedPlatform = platform || detectPlatform(input);
+    console.log('检测到平台:', detectedPlatform);
+    
+    // 2. 智能链接提取
+    const extractedUrl = extractUrlByPlatform(input, detectedPlatform);
+    console.log('提取的链接:', extractedUrl);
+    
+    // 3. 平台特定解析
+    let result;
+    if (detectedPlatform === 'douyin') {
+      result = await parser.parse(extractedUrl);
+    } else if (detectedPlatform === 'xiaohongshu') {
+      result = await xiaohongshuParser.parse(input); // 小红书需要完整分享文本
+    } else {
+      throw new Error('不支持的平台或格式');
+    }
+    
+    // 4. 统一格式返回
+    const response = formatUniversalResponse(result, detectedPlatform);
+    res.json(response);
+    
+  } catch (error) {
+    console.error('统一解析错误:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message,
+      platform: null
+    });
+  }
+});
+
+// 平台检测函数
+function detectPlatform(input) {
+  const patterns = {
+    douyin: [
+      /v\.douyin\.com/i,
+      /douyin\.com/i,
+      /抖音/i,
+      /看看.*作品/i,
+      /复制打开抖音/i,
+      /iesdouyin\.com/i
+    ],
+    xiaohongshu: [
+      /xiaohongshu\.com/i,
+      /xhslink/i,
+      /小红书/i,
+      /发现好内容/i,
+      /发现美好，马上出发/i
+    ]
+  };
+
+  for (const [platform, regexes] of Object.entries(patterns)) {
+    if (regexes.some(regex => regex.test(input))) {
+      return platform;
+    }
+  }
+  
+  throw new Error('不支持的平台，目前支持抖音和小红书');
+}
+
+// 按平台提取链接
+function extractUrlByPlatform(input, platform) {
+  // 首先使用统一的链接提取工具
+  const { extractUrl } = require('../utils/urlUtils');
+  const extractedUrl = extractUrl(input);
+  
+  // 验证提取的URL是否符合指定平台
+  if (platform === 'douyin') {
+    const douyinPatterns = [
+      /v\.douyin\.com/i,
+      /www\.douyin\.com/i,
+      /www\.iesdouyin\.com/i
+    ];
+    if (douyinPatterns.some(pattern => pattern.test(extractedUrl))) {
+      return extractedUrl;
+    }
+    
+    // 回退到原有抖音提取方法
+    const douyinUrl = extractDouyinUrl(input) || cleanShareText(input);
+    if (douyinUrl) {
+      return douyinUrl;
+    }
+  } else if (platform === 'xiaohongshu') {
+    const xiaohongshuPatterns = [
+      /xiaohongshu\.com/i,
+      /xhslink\.com/i
+    ];
+    if (xiaohongshuPatterns.some(pattern => pattern.test(extractedUrl))) {
+      return extractedUrl;
+    }
+  }
+
+  throw new Error(`未在输入内容中找到有效的${platform === 'douyin' ? '抖音' : '小红书'}链接`);
+}
+
+// 统一响应格式化
+function formatUniversalResponse(data, platform) {
+  const baseResponse = {
+    success: true,
+    platform: platform,
+    timestamp: Date.now()
+  };
+
+  if (platform === 'douyin') {
+    return {
+      ...baseResponse,
+      data: {
+        type: 'video',
+        title: data.title || '无标题',
+        author: {
+          name: data.author || '未知作者',
+          avatar: data.authorAvatar || null
+        },
+        thumbnail: data.cover || null,
+        downloadUrls: {
+          video: data.normalVideoUrl || data.videoUrl || null,
+          videoHd: data.hdVideoUrl || null,
+          audio: data.audioUrl || null
+        },
+        metadata: {
+          duration: data.duration || null,
+          platform: 'douyin'
+        },
+        rawData: data // 保留原始数据用于兼容性
+      }
+    };
+  } else if (platform === 'xiaohongshu') {
+    return {
+      ...baseResponse,
+      data: {
+        type: 'video', // 仅支持视频类型
+        title: data.title || '无标题',
+        description: data.description || null,
+        author: {
+          name: data.author || '未知作者',
+          avatar: data.authorAvatar || null
+        },
+        thumbnail: data.cover || null,
+        downloadUrls: {
+          video: data.videoUrl || null,
+          audio: data.audioUrl || null
+        },
+        metadata: {
+          tags: data.tags || [],
+          stats: data.stats || {},
+          platform: 'xiaohongshu'
+        },
+        rawData: data // 保留原始数据用于兼容性
+      }
+    };
+  }
+
+  return baseResponse;
+}
+
 // ===== 小红书相关API =====
 
-// 小红书内容解析API
+// 小红书内容解析API（仅支持视频）
 router.post('/xiaohongshu/parse', async (req, res) => {
   try {
     const { shareText } = req.body;
@@ -140,6 +348,14 @@ router.post('/xiaohongshu/parse', async (req, res) => {
     }
     
     const contentInfo = await xiaohongshuParser.parse(shareText);
+    
+    // 仅返回视频内容，过滤掉图文
+    if (contentInfo.type !== 'video' && !contentInfo.videoUrl) {
+      return res.status(400).json({ 
+        error: '暂不支持小红书图文内容，仅支持视频下载' 
+      });
+    }
+    
     res.json({
       success: true,
       data: contentInfo
@@ -151,83 +367,6 @@ router.post('/xiaohongshu/parse', async (req, res) => {
       success: false,
       error: error.message
     });
-  }
-});
-
-// 小红书图片下载API (单张)
-router.post('/xiaohongshu/download-image', async (req, res) => {
-  try {
-    const { imageUrl, title, index } = req.body;
-    
-    if (!imageUrl) {
-      return res.status(400).json({ error: '未找到图片下载链接' });
-    }
-    
-    console.log('开始下载小红书图片:', imageUrl.substring(0, 100) + '...');
-    
-    // 下载并转换为JPG
-    const result = await imageProcessor.downloadAndConvertToJpg(imageUrl, title, index || 0);
-    
-    // 设置响应头
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${encodeURIComponent(result.filename)}`);
-    res.setHeader('Content-Type', result.mimeType);
-    res.setHeader('Content-Length', result.size);
-    
-    // 发送文件
-    res.send(result.buffer);
-    
-  } catch (error) {
-    console.error('小红书图片下载失败:', error.message);
-    if (!res.headersSent) {
-      res.status(500).json({ error: '图片下载失败: ' + error.message });
-    }
-  }
-});
-
-// 小红书图片批量下载API
-router.post('/xiaohongshu/download-images', async (req, res) => {
-  try {
-    const { images, title } = req.body;
-    
-    if (!images || !Array.isArray(images) || images.length === 0) {
-      return res.status(400).json({ error: '未找到图片列表' });
-    }
-    
-    console.log(`开始批量下载 ${images.length} 张小红书图片...`);
-    
-    // 批量处理图片
-    const results = await imageProcessor.batchProcessImages(images, title);
-    
-    if (results.success.length === 0) {
-      return res.status(500).json({ 
-        error: '所有图片下载失败',
-        details: results.errors 
-      });
-    }
-    
-    // 创建ZIP文件返回
-    const archiver = require('archiver');
-    const archive = archiver('zip', { zlib: { level: 9 } });
-    
-    res.setHeader('Content-Type', 'application/zip');
-    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''xiaohongshu_images_${Date.now()}.zip`);
-    
-    archive.pipe(res);
-    
-    // 添加图片到ZIP
-    results.success.forEach(result => {
-      archive.append(result.buffer, { name: result.filename });
-    });
-    
-    await archive.finalize();
-    
-    console.log(`批量下载完成: 成功 ${results.success.length} 张, 失败 ${results.errors.length} 张`);
-    
-  } catch (error) {
-    console.error('批量图片下载失败:', error.message);
-    if (!res.headersSent) {
-      res.status(500).json({ error: '批量下载失败: ' + error.message });
-    }
   }
 });
 

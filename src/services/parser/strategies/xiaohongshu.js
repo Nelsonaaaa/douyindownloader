@@ -30,7 +30,7 @@ class XiaohongshuParser extends BaseParser {
         headers: {
           'x-rapidapi-key': config.apis.xiaohongshu.key,
           'x-rapidapi-host': config.apis.xiaohongshu.host,
-          'Authorization': 'Bearer 0OA4VGxrwlUlgwJTjUWblCQDhjhbqbb9sr9c/TK4qjRP0VoEOa9V2zu3CA=='
+          'Authorization': config.apis.xiaohongshu.auth
         },
         timeout: config.request.timeout,
         responseType: 'json'

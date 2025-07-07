@@ -14,59 +14,70 @@ class RapidApiParser extends BaseParser {
 
   async parse(originalUrl, videoId) {
     try {
-      console.log('使用RapidAPI官方解析方法...');
+      console.log('使用新版RapidAPI v3解析方法...');
       console.log('原始URL:', originalUrl);
       
       const encodedUrl = encodeURIComponent(originalUrl);
-      const apiUrl = `${config.apis.rapidapi.url}?url=${encodedUrl}`;
+      const apiUrl = `${config.apis.rapidapi.url}?share_url=${encodedUrl}`;
       
       const response = await axios({
         method: 'GET',
         url: apiUrl,
         headers: {
-          'X-RapidAPI-Key': config.apis.rapidapi.key,
-          'X-RapidAPI-Host': config.apis.rapidapi.host,
-          'Accept': 'application/json',
-          'Accept-Charset': 'utf-8'
+          'x-rapidapi-key': config.apis.rapidapi.key,
+          'x-rapidapi-host': config.apis.rapidapi.host,
+          'Authorization': config.apis.rapidapi.auth,
+          'Accept': 'application/json'
         },
         timeout: config.request.timeout,
-        responseType: 'json',
-        responseEncoding: 'utf8'
+        responseType: 'json'
       });
       
-      console.log('RapidAPI响应:', JSON.stringify(response.data, null, 2));
+      console.log('RapidAPI v3响应:', JSON.stringify(response.data, null, 2));
       
-      if (response.data && response.data.status === 'success' && response.data.data) {
+      if (response.data && response.data.code === 200 && response.data.data) {
         const data = response.data.data;
         
-        // 获取下载链接
-        let downloadLinks = data.download_links || [];
+        // 从新API结构获取视频URL - 使用bit_rate优先
+        let videoUrl = '';
+        if (data.aweme_detail && data.aweme_detail.video) {
+          const video = data.aweme_detail.video;
+          
+          // 优先使用bit_rate高清视频
+          if (video.bit_rate && video.bit_rate.length > 0) {
+            const bitRateItem = video.bit_rate[0];
+            if (bitRateItem.play_addr && bitRateItem.play_addr.url_list) {
+              videoUrl = bitRateItem.play_addr.url_list[0];
+            }
+          }
+          
+          // 回退到标准play_addr
+          if (!videoUrl && video.play_addr && video.play_addr.url_list) {
+            videoUrl = video.play_addr.url_list[0];
+          }
+        }
         
-        const videoUrl = this.selectBestVideoLink(downloadLinks);
         if (!videoUrl) {
           throw new Error('未找到有效的视频下载链接');
         }
         
-        // 修复标题编码
-        const title = fixChineseEncoding(data.title);
-        
-        // 获取音频链接
-        const audioUrl = this.selectAudioLink(downloadLinks);
+        // 获取标题和作者信息
+        const title = fixChineseEncoding(data.aweme_detail?.desc || '无标题');
+        const author = data.aweme_detail?.author?.nickname || '未知作者';
+        const cover = data.aweme_detail?.video?.cover?.url_list?.[0] || '';
+        const duration = Math.floor((data.aweme_detail?.video?.duration || 0) / 1000);
 
         return this.normalizeResult({
-          videoId: data.tiktok_id || videoId,
+          videoId: data.aweme_detail?.aweme_id || videoId,
           title: title,
-          author: response.data.author || '未知作者',
+          author: author,
           videoUrl: videoUrl,
-          cover: data.thumbnail || '',
-          duration: 0,
-          downloadLinks: downloadLinks,
-          normalVideoUrl: videoUrl,
-          audioUrl: audioUrl
+          cover: cover,
+          duration: duration
         }, videoId);
       }
       
-      throw new Error('RapidAPI返回数据格式不正确: ' + JSON.stringify(response.data));
+      throw new Error('RapidAPI v3返回数据格式不正确: ' + JSON.stringify(response.data));
       
     } catch (error) {
       console.error('RapidAPI解析失败:', error.message);

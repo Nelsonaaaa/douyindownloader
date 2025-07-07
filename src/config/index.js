@@ -3,22 +3,24 @@ require('dotenv').config();
 const config = {
   // 服务器配置
   server: {
-    port: process.env.PORT || 3002,
+    port: process.env.PORT || 3003,
   },
 
   // API配置
   apis: {
-    // 抖音API配置
+    // 抖音API配置 - 使用v3端点
     rapidapi: {
-      key: process.env.RAPIDAPI_KEY,
-      host: process.env.DOUYIN_RAPIDAPI_HOST || 'douyin-media-downloader.p.rapidapi.com',
-      url: 'https://douyin-media-downloader.p.rapidapi.com/v2.php'
+      key: process.env.RAPIDAPI_KEY || '3432c861c6msh5b60758163ec8d3p138733jsn7db8b1f9847d',
+      host: process.env.DOUYIN_RAPIDAPI_HOST || 'tiktok-douyin-xiaohongshu-weibo-instagram-api.p.rapidapi.com',
+      url: 'https://tiktok-douyin-xiaohongshu-weibo-instagram-api.p.rapidapi.com/api/v1/douyin/app/v3/fetch_one_video_by_share_url',
+      auth: 'Bearer x5ordnxU3CYgkBsu1GXvpkERgl4buJPmvZFK0S7ptk4f/0cVWOR56SaICA=='
     },
     // 小红书API配置
     xiaohongshu: {
-      key: process.env.RAPIDAPI_KEY,
+      key: process.env.RAPIDAPI_KEY || '3432c861c6msh5b60758163ec8d3p138733jsn7db8b1f9847d',
       host: process.env.XIAOHONGSHU_RAPIDAPI_HOST || 'tiktok-douyin-xiaohongshu-weibo-instagram-api.p.rapidapi.com',
-      url: 'https://tiktok-douyin-xiaohongshu-weibo-instagram-api.p.rapidapi.com/api/v1/xiaohongshu/web/get_note_info_v3'
+      url: 'https://tiktok-douyin-xiaohongshu-weibo-instagram-api.p.rapidapi.com/api/v1/xiaohongshu/web/get_note_info_v3',
+      auth: 'Bearer x5ordnxU3CYgkBsu1GXvpkERgl4buJPmvZFK0S7ptk4f/0cVWOR56SaICA=='
     },
     juhe: {
       key: process.env.JUHE_API_KEY,

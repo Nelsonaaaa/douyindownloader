@@ -54,13 +54,26 @@ class WebPageParser extends BaseParser {
         throw new Error('网页中未找到视频数据');
       }
       
+      // 优先尝试从bit_rate数组获取高清视频
       let videoUrl = '';
-      if (videoData.video.play_addr && videoData.video.play_addr.url_list) {
-        videoUrl = videoData.video.play_addr.url_list[0];
-        videoUrl = removeWatermark(videoUrl);
+      
+      if (videoData.video.bit_rate && videoData.video.bit_rate.length > 0) {
+        const bitRateItem = videoData.video.bit_rate[0];
+        if (bitRateItem.play_addr && bitRateItem.play_addr.url_list) {
+          videoUrl = bitRateItem.play_addr.url_list[0];
+          console.log('使用高清bit_rate视频URL:', videoUrl);
+        }
       }
       
-      if (!videoUrl) {
+      // 如果bit_rate不可用，回退到原有方法
+      if (!videoUrl && videoData.video.play_addr && videoData.video.play_addr.url_list) {
+        videoUrl = videoData.video.play_addr.url_list[0];
+        console.log('使用标准play_addr视频URL:', videoUrl);
+      }
+      
+      if (videoUrl) {
+        videoUrl = removeWatermark(videoUrl);
+      } else {
         throw new Error('无法从网页获取视频地址');
       }
       

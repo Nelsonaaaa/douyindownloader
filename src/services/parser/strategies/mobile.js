@@ -34,14 +34,27 @@ class MobileApiParser extends BaseParser {
         throw new Error('未找到视频信息');
       }
       
-      // 构造无水印视频地址
+      // 构造无水印视频地址 - 优先使用高清bit_rate
       let videoUrl = '';
-      if (aweme.video.play_addr && aweme.video.play_addr.url_list) {
-        videoUrl = aweme.video.play_addr.url_list[0];
-        videoUrl = removeWatermark(videoUrl);
+      
+      // 优先尝试从bit_rate数组获取高清视频
+      if (aweme.video.bit_rate && aweme.video.bit_rate.length > 0) {
+        const bitRateItem = aweme.video.bit_rate[0];
+        if (bitRateItem.play_addr && bitRateItem.play_addr.url_list) {
+          videoUrl = bitRateItem.play_addr.url_list[0];
+          console.log('使用高清bit_rate视频URL:', videoUrl);
+        }
       }
       
-      if (!videoUrl) {
+      // 如果bit_rate不可用，回退到原有方法
+      if (!videoUrl && aweme.video.play_addr && aweme.video.play_addr.url_list) {
+        videoUrl = aweme.video.play_addr.url_list[0];
+        console.log('使用标准play_addr视频URL:', videoUrl);
+      }
+      
+      if (videoUrl) {
+        videoUrl = removeWatermark(videoUrl);
+      } else {
         throw new Error('无法获取视频地址');
       }
       

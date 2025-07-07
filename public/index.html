@@ -3,8 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>觅安抖音助手</title>
+    <title>觅安智能助手</title>
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="universal-parser.css">
+    
+    <!-- 图标预加载 -->
+    <link rel="preload" href="/icons/douyin.svg" as="image" type="image/svg+xml">
+    <link rel="preload" href="/icons/renote.svg" as="image" type="image/svg+xml">
+    <link rel="preload" href="/icons/download.svg" as="image" type="image/svg+xml">
+    <link rel="preload" href="/icons/解析.svg" as="image" type="image/svg+xml">
 </head>
 <body>
     <!-- 导航栏 -->
@@ -15,67 +22,27 @@
             </div>
             <div class="nav-links">
                 <a href="index.html" class="nav-link active">
-                    <span class="nav-icon">🎵</span>
-                    <span>抖音助手</span>
-                </a>
-                <a href="xiaohongshu.html" class="nav-link">
-                    <span class="nav-icon">🌸</span>
-                    <span>小红书助手</span>
+                    <span class="nav-icon">🚀</span>
+                    <span>智能助手</span>
                 </a>
             </div>
         </div>
     </nav>
 
     <div class="container">
-        <header class="page-header douyin-theme">
-            <h1>觅安抖音助手</h1>
-            <p>Mi'an douyin downloader</p>
+        <header class="page-header universal-theme">
+            <h1>觅安智能助手</h1>
+            <p>支持抖音和小红书的智能解析下载</p>
+            <div class="feature-highlights">
+                <span class="feature-item">🎵 抖音视频</span>
+                <span class="feature-item">📹 小红书视频</span>
+                <span class="feature-item">🚀 一键解析</span>
+            </div>
         </header>
 
         <main>
-            <div class="input-section">
-                <input type="text" id="videoUrl" placeholder="粘贴抖音分享链接..." />
-                <button id="parseBtn" class="parse-btn douyin-btn">解析视频</button>
-            </div>
-
-            <div id="loading" class="loading hidden">
-                <div class="spinner douyin-spinner"></div>
-                <p>正在解析中...</p>
-            </div>
-
-            <div id="error" class="error hidden">
-                <p id="errorMsg"></p>
-            </div>
-
-            <div id="result" class="result hidden">
-                <div class="video-info">
-                    <div class="video-preview" id="videoPreview">
-                        <img id="videoCover" src="" alt="视频封面" />
-                    </div>
-                    <div class="info-text">
-                        <h3 id="videoTitle"></h3>
-                        <p>作者: <span id="videoAuthor">觅安-if</span></p>
-                        <p>时长: <span id="videoDuration">保密</span></p>
-                    </div>
-                </div>
-                
-                <div class="download-section">
-                    <button id="downloadVideoBtn" class="download-btn douyin-download">📹 下载视频</button>
-                    <button id="downloadAudioBtn" class="audio-btn douyin-audio">🎵 下载MP3音频</button>
-                </div>
-            </div>
-
-            <!-- 视频预览弹窗 -->
-            <div id="videoModal" class="video-modal hidden">
-                <div class="modal-content">
-                    <video id="previewVideo" controls>
-                        <source id="videoSource" src="" type="video/mp4">
-                        您的浏览器不支持视频播放。
-                    </video>
-                    <button id="closeModal" class="close-modal">✕ 关闭</button>
-                </div>
-            </div>
-
+            <!-- 统一智能解析组件 -->
+            <div id="universalParserMount"></div>
         </main>
 
         <footer>
@@ -83,6 +50,6 @@
         </footer>
     </div>
 
-    <script src="script.js"></script>
+    <script src="universal-parser.js"></script>
 </body>
 </html>
